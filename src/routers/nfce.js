@@ -1,9 +1,12 @@
-const express = require('express')
-const Nfce = require('../models/Nfce')
+const express = require('express');
+const Nfce = require('../models/Nfce');
+const Item = require('../models/Item');
 var request = require('request');
 const cheerio = require('cheerio');
 
-const router = express.Router()
+const router = express.Router();
+var nfce = {};
+var items = [];
 
 router.get('/crawler', function (req, res) {
 
@@ -12,78 +15,80 @@ router.get('/crawler', function (req, res) {
     request(url, function (error, response, html) {
 
         if (!error) {
+            var nfce = {};
+            var items = [];
+
             var $ = cheerio.load(html);
 
-            var nfce = {};
-            var itens = [];
-
             $('#myTable tr').each(function (i) {
-                const text = $(this).find('td').eq(0).text().replace(/\t/g, '').split('\n');
-                const nameProduct = text[0];
-                const codeProduct = text[1].replace('(Código: ', '').replace(')', '');
-                const qtdeItens = $(this).find('td').eq(1).text().replace('Qtde total de ítens: ', '');
-                const unProduct = $(this).find('td').eq(2).text().replace('UN: ', '');
-                const valueProduct = $(this).find('td').eq(3).text().replace('Valor total R$: R$ ', '').replace(',', '.');
-                
-                itens.push({
-                    nameProduct: nameProduct,
-                    codeProduct: codeProduct,
-                    qtdeItens: qtdeItens,
-                    unProduct : unProduct,
-                    valueProduct: valueProduct
-                });
-            });
-            nfce["itens"] = itens;
+                const itemText = $(this).find('td').eq(0).text().replace(/\t/g, '').split('\n');
+                const itemName = itemText[0];
+                const itemCode = itemText[1].replace('(Código: ', '').replace(')', '');
+                const qtdItem = $(this).find('td').eq(1).text().replace('Qtde total de ítens: ', '');
+                const unItem = $(this).find('td').eq(2).text().replace('UN: ', '');
+                const itemValue = $(this).find('td').eq(3).text().replace('Valor total R$: R$ ', '').replace(',', '.');
 
-            var cont = 0;
-            var qtdTotalItens = 0;
-            var valueTotal = 0;
-            var valuePaid = 0;
-            var typePayment;
+                items.push(new Item({
+                    itemName,
+                    itemCode,
+                    qtdItem,
+                    unItem,
+                    itemValue
+                }));
+            });
+
+            nfce["items"] = items;
+
+            let counter = 0;
+            let totalItems = 0;
+            let totalValue = 0;
+            let paidValue = 0;
+            let typePayment;
 
             $('.row').each(function (i) {
-                switch(cont) {
+                switch (counter) {
                     case 0:
-                        qtdTotalItens = $(this).find('strong').eq(1).text().replace(/\t/g, '');
+                        totalItems = $(this).find('strong').eq(1).text().replace(/\t/g, '');
                         break;
                     case 1:
-                        valueTotal = $(this).find('strong').eq(1).text().replace(/\t/g, '');
+                        totalValue = $(this).find('strong').eq(1).text().replace(/\t/g, '');
                         break;
                     case 2:
-                        valuePaid = $(this).find('strong').eq(1).text().replace(/\t/g, '');
+                        paidValue = $(this).find('strong').eq(1).text().replace(/\t/g, '');
                         break;
                     case 3:
                         var type = $(this).find('strong').text().replace(/\t/g, '').split("- ");;
                         typePayment = type[1];
                         break;
                 }
-                cont++;
+                counter++;
             });
 
             nfce["details"] = {
-                qtdTotalItens: qtdTotalItens,
-                valueTotal: valueTotal,
-                valuePaid: valuePaid,
-                typePayment : typePayment
+                totalItems: totalItems,
+                totalValue: totalValue,
+                paidValue: paidValue,
+                typePayment: typePayment
             };
 
-            var nameSocial;
-            var cnpj;
-            var stateRegistration;
-            var uf;
-            var operationDestination;
-            var finalCostumer;
-            var buyerPresence;
-            var model;
-            var series;
-            var number;
-            var issuanceDate;
-            var totalValueService;
-            var icmsCalculationBasis;
-            var icmsValue;
-            var protocol;
+            let socialName;
+            let cnpj;
+            let stateRegistration;
+            let uf;
+            let operationDestination;
+            let finalCostumer;
+            let buyerPresence;
+            let model;
+            let series;
+            let number;
+            let issuanceDate;
+            let totalValueService;
+            let icmsCalculationBasis;
+            let icmsValue;
+            let protocol;
+
             $('#collapse4').each(function (i) {
-                nameSocial = $(this).find('td').eq(0).text();
+                socialName = $(this).find('td').eq(0).text();
                 cnpj = $(this).find('td').eq(1).text();
                 stateRegistration = $(this).find('td').eq(2).text();
                 uf = $(this).find('td').eq(3).text();
@@ -94,14 +99,18 @@ router.get('/crawler', function (req, res) {
                 series = $(this).find('td').eq(8).text();
                 number = $(this).find('td').eq(9).text();
                 issuanceDate = $(this).find('td').eq(10).text();
-                totalValueService = $(this).find('td').eq(11).text();
-                icmsCalculationBasis = $(this).find('td').eq(12).text();
-                icmsValue = $(this).find('td').eq(13).text();
+                totalValueService = $(this).find('td').eq(11).text().replace('R$ ', '').replace(',', '.');
+                icmsCalculationBasis = $(this).find('td').eq(12).text().replace('R$ ', '').replace(',', '.');
+                icmsValue = $(this).find('td').eq(13).text().replace('R$ ', '').replace(',', '.');
                 protocol = $(this).find('td').eq(14).text();
             });
 
             nfce["detailsNfce"] = {
-                nameSocial: nameSocial,
+                totalItems: totalItems,
+                totalValue: totalValue,
+                paidValue: paidValue,
+                typePayment: typePayment,
+                socialName: socialName,
                 cnpj: cnpj,
                 stateRegistration: stateRegistration,
                 uf: uf,
@@ -117,11 +126,176 @@ router.get('/crawler', function (req, res) {
                 icmsValue: icmsValue,
                 protocol: protocol
             };
-            
         }
-
         nfce === null ? res.status(400).send({}) : res.status(201).send({ nfce });
     })
+})
+
+
+
+/*router.get('/crawler', function (req, res) {
+
+    url = req.body;
+
+    request(url, function (error, response, html) {
+
+        if (!error) {
+            var $ = cheerio.load(html);
+
+            var nfce = {};
+            let items = [];
+
+            $('#myTable tr').each(function (i) {
+                const itemText = $(this).find('td').eq(0).text().replace(/\t/g, '').split('\n');
+                const itemName = itemText[0];
+                const itemCode = itemText[1].replace('(Código: ', '').replace(')', '');
+                const qtdItem = $(this).find('td').eq(1).text().replace('Qtde total de ítens: ', '');
+                const unItem = $(this).find('td').eq(2).text().replace('UN: ', '');
+                const itemValue = $(this).find('td').eq(3).text().replace('Valor total R$: R$ ', '').replace(',', '.');
+
+                items.push({
+                    itemName,
+                    itemCode,
+                    qtdItem,
+                    unItem,
+                    itemValue
+                });
+            });
+            nfce["items"] = items;
+
+            let counter = 0;
+            let totalItems = 0;
+            let totalValue = 0;
+            let paidValue = 0;
+            let typePayment;
+
+            $('.row').each(function (i) {
+                switch (counter) {
+                    case 0:
+                        totalItems = $(this).find('strong').eq(1).text().replace(/\t/g, '');
+                        break;
+                    case 1:
+                        totalValue = $(this).find('strong').eq(1).text().replace(/\t/g, '');
+                        break;
+                    case 2:
+                        paidValue = $(this).find('strong').eq(1).text().replace(/\t/g, '');
+                        break;
+                    case 3:
+                        var type = $(this).find('strong').text().replace(/\t/g, '').split("- ");;
+                        typePayment = type[1];
+                        break;
+                }
+                counter++;
+            });
+
+            nfce["details"] = {
+                totalItems: totalItems,
+                totalValue: totalValue,
+                paidValue: paidValue,
+                typePayment: typePayment
+            };
+
+            let socialName;
+            let cnpj;
+            let stateRegistration;
+            let uf;
+            let operationDestination;
+            let finalCostumer;
+            let buyerPresence;
+            let model;
+            let series;
+            let number;
+            let issuanceDate;
+            let totalValueService;
+            let icmsCalculationBasis;
+            let icmsValue;
+            let protocol;
+
+            $('#collapse4').each(function (i) {
+                socialName = $(this).find('td').eq(0).text();
+                cnpj = $(this).find('td').eq(1).text();
+                stateRegistration = $(this).find('td').eq(2).text();
+                uf = $(this).find('td').eq(3).text();
+                operationDestination = $(this).find('td').eq(4).text();
+                finalCostumer = $(this).find('td').eq(5).text();
+                buyerPresence = $(this).find('td').eq(6).text();
+                model = $(this).find('td').eq(7).text();
+                series = $(this).find('td').eq(8).text();
+                number = $(this).find('td').eq(9).text();
+                issuanceDate = $(this).find('td').eq(10).text();
+                totalValueService = $(this).find('td').eq(11).text().replace('R$ ', '').replace(',', '.');
+                icmsCalculationBasis = $(this).find('td').eq(12).text().replace('R$ ', '').replace(',', '.');
+                icmsValue = $(this).find('td').eq(13).text().replace('R$ ', '').replace(',', '.');
+                protocol = $(this).find('td').eq(14).text();
+            });
+
+            nfce["detailsNfce"] = {
+                socialName: socialName,
+                cnpj: cnpj,
+                stateRegistration: stateRegistration,
+                uf: uf,
+                operationDestination: operationDestination,
+                finalCostumer: finalCostumer,
+                buyerPresence: buyerPresence,
+                model: model,
+                series: series,
+                number: number,
+                issuanceDate: issuanceDate,
+                totalValueService: totalValueService,
+                icmsCalculationBasis: icmsCalculationBasis,
+                icmsValue: icmsValue,
+                protocol: protocol
+            };
+        }
+        nfce === null ? res.status(400).send({}) : res.status(201).send({ nfce });
+    })
+})*/
+
+router.post('/teste', async (req, res) => {
+    try {
+        const { items, details, detailsNfce } = req.body.nfce;
+        const objNfce = await Nfce.create({ ...details, ...detailsNfce });
+
+        await Promise.all(items.map(async item => {
+            const nfceItem = new Item({
+                ...items,
+                nfce: objNfce._id
+            });
+            await nfceItem.save();
+            objNfce.items.push(nfceItem);
+        }));
+
+        await objNfce.save();
+        return res.status(201).send({ objNfce });
+    } catch (err) {
+        res.status(400).send(err)
+    }
+})
+
+router.post('/nfcenovo', async (req, res) => {
+    try {
+        const { url } = req.body;
+        crawler(url);
+        const objNfce = await Nfce.create({ ...nfce });
+
+        await Promise.all(items.map(async item => {
+            const nfceItem = new Item({
+                itemName: item.itemName,
+                itemCode: item.itemCode,
+                qtdItem: item.qtdItem,
+                unItem: item.unItem,
+                itemValue: item.itemValue,
+                nfce: objNfce._id
+            });
+            await nfceItem.save();
+            objNfce.items.push(nfceItem);
+        }));
+
+        await objNfce.save();
+        return res.status(201).send({ objNfce });
+    } catch (err) {
+        res.status(400).send(err)
+    }
 })
 
 router.get('/nfce', async (req, res) => {
@@ -145,7 +319,7 @@ router.get('/nfces', async (req, res) => {
         })
 })
 
-router.post('/nfce', async (req, res) => {
+/*router.post('/nfce', async (req, res) => {
     const nfce = new Nfce(req.body)
     await nfce.save()
         .then(async () => {
@@ -154,7 +328,7 @@ router.post('/nfce', async (req, res) => {
         .catch(err => {
             res.status(400).send(err)
         })
-})
+})*/
 
 router.put('/nfce', async (req, res) => {
     const { link, date } = req.body
