@@ -8,6 +8,7 @@
   "repository": "",
   "author": "",
   "dependencies": {
+    "bcryptjs": "^2.4.3",
     "cheerio": "^0.20.0",
     "cors": "^2.8.5",
     "express": "^4.17.1",

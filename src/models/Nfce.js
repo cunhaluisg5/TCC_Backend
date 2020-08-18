@@ -1,17 +1,5 @@
 const mongoose = require('mongoose')
 
-/*const nfceSchema = mongoose.Schema({
-    link: {
-        type: String,
-        required: true,
-        trim: false
-    },
-    date: {
-        type: Date,
-        required: true
-    }
-})*/
-
 const nfceSchema = mongoose.Schema({
   url: {
     type: String
