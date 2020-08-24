@@ -6,6 +6,15 @@ const itemSchema = mongoose.Schema({
         ref: 'Nfce',
         require: true
     },
+    assignedTo: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        require: true
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now
+    },
     itemName: {
         type: String
     },

@@ -128,4 +128,4 @@ router.get('/', function (req, res) {
     })
 })
 
-module.exports = router
+module.exports = app => app.use('/crawler', router);

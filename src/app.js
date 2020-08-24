@@ -1,21 +1,13 @@
-const express = require('express')
-const nfceRouter = require('./app/controllers/nfce')
-const userRouter = require('./app/controllers/user')
-const authRouter = require('./app/controllers/project');
-const crawlerRouter = require('./app/controllers/crawler');
-const port = process.env.PORT
-require('./db/db')
+const express = require('express');
 
-const app = express()
-const cors = require('cors')
+const port = process.env.PORT;
+require('./db/db');
 
-app.use(cors())
-app.use(express.json())
-app.use('/auth',userRouter)
-app.use('/projects', authRouter)
-app.use('/nfce', nfceRouter)
-app.use('/crawler', crawlerRouter)
+const app = express();
+app.use(express.json());
+
+require('./app/controllers/index')(app);
 
 app.listen(port, () => {
     console.log(`Server running on port ${port}`)
-})
+});

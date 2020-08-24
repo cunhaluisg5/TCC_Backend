@@ -35,7 +35,7 @@ router.post('/register', async (req, res) => {
 
 router.post('/authenticate', async (req, res) => {
     const { email, password } = req.body;
-console.log('Email: ' + email + ', Password: ' + password)
+    
     const user = await User.findOne({ email }).select('+password');
 
     if(!user) {
@@ -47,10 +47,6 @@ console.log('Email: ' + email + ', Password: ' + password)
     }
 
     user.password = undefined;
-
-    const token = jwt.sign({ id: user.id }, authConfig.secret, {
-        expiresIn: 86400
-    });
 
     res.send({ user, token: generateToken({ id: user.id }) });
 })
@@ -125,4 +121,4 @@ router.post('/reset_password', async (req, res) => {
     }
 })
 
-module.exports = router
+module.exports = app => app.use('/auth', router);

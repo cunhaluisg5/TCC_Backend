@@ -4,9 +4,14 @@ const nfceSchema = mongoose.Schema({
   url: {
     type: String
   },
-  scanDate: {
+  createdAt: {
     type: Date,
     default: Date.now
+  },
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    require: true
   },
   items: [{
     type: mongoose.Schema.Types.ObjectId,
