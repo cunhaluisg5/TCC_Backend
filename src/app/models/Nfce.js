@@ -29,6 +29,9 @@ const nfceSchema = mongoose.Schema({
   typePayment: {
     type: String
   },
+  accesskey: {
+    type: String
+  },
   socialName: {
     type: String
   },
