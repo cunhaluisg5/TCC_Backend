@@ -5,9 +5,9 @@ const Item = require('../models/Item');
 
 const router = express.Router();
 
-router.get('/', function (req, res) {
+router.post('/', async (req, res) => {
     try {
-        const { url } = req.body;
+        const {url} = req.body;
         const nfce = {};
         const items = [];
 
@@ -102,7 +102,7 @@ router.get('/', function (req, res) {
                     icmsCalculationBasis, icmsValue, protocol, url
                 };
             }
-            nfce === null ? res.status(400).send({}) : res.status(201).send({ nfce });
+            nfce === null ? res.status(400).send({}) : res.status(201).send({nfce});
         })
     } catch (err) {
         res.status(400).send({ error: 'Error on crawler' })
