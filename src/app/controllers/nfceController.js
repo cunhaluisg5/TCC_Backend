@@ -18,6 +18,16 @@ router.get('/', async (req, res) => {
     }
 });
 
+router.get('/user/:userId', async (req, res) => {
+    try {
+        const nfces = await Nfce.find({ "user": req.params.userId }).populate(['user', 'items']);
+
+        return res.send({ nfces });
+    } catch (err) {
+        res.status(400).send({ error: 'Error loading nfces' })
+    }
+});
+
 router.get('/:nfceId', async (req, res) => {
     try {
         const nfce = await Nfce.findById(req.params.nfceId).populate(['user', 'items']);
