@@ -41,6 +41,12 @@ router.get('/:nfceId', async (req, res) => {
 router.post('/', async (req, res) => {
     try {
         const { items, details, detailsNfce } = req.body.nfce;
+        const { accesskey } = detailsNfce;
+
+        if(await Nfce.findOne({ accesskey })) {
+            return res.status(400).send({ error: 'Nfce already exists' });
+        }
+
         const nfce = await Nfce.create({ user: req.userId, ...details, ...detailsNfce });
 
         await Promise.all(items.map(async item => {
