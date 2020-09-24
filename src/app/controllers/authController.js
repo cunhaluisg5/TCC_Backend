@@ -123,14 +123,12 @@ router.post('/reset_password', async (req, res) => {
 
 router.put('/:userId', async (req, res) => {
     try {
-        var { name, email, password } = req.body;
-        var hash = await bcrypt.hash(password, 10);
-        password = hash;
-        const user = await User.findByIdAndUpdate(req.params.userId, { name, email, password }, 
+        var { name } = req.body;
+        const user = await User.findByIdAndUpdate(req.params.userId, { name }, 
             { new: true });
         return res.status(201).send({ user });
     } catch (err) {
-        res.status(400).send({ error: 'Error updating new user' + err })
+        res.status(400).send({ error: 'Error updating new user' })
     }
 })
 
