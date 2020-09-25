@@ -43,7 +43,8 @@ router.post('/', async (req, res) => {
         const { items, details, detailsNfce } = req.body.nfce;
         const { accesskey } = detailsNfce;
 
-        if(await Nfce.findOne({ accesskey })) {
+        if(await Nfce.findOne({ accesskey, user: req.userId })) {
+            console.log('ChEgOu')
             return res.status(400).send({ error: 'Nfce already exists' });
         }
 
