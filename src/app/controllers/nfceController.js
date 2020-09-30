@@ -44,11 +44,11 @@ router.post('/', async (req, res) => {
         const { accesskey } = detailsNfce;
 
         if(await Nfce.findOne({ accesskey, user: req.userId })) {
-            console.log('ChEgOu')
             return res.status(400).send({ error: 'Nfce already exists' });
         }
 
         const nfce = await Nfce.create({ user: req.userId, ...details, ...detailsNfce });
+        console.log('NFCE: ', nfce)
 
         await Promise.all(items.map(async item => {
             const nfceItem = new Item({ ...item, nfce: nfce._id });
@@ -59,7 +59,7 @@ router.post('/', async (req, res) => {
         await nfce.save();
         return res.status(201).send({ nfce });
     } catch (err) {
-        res.status(400).send({ error: 'Error creating new nfce' })
+        res.status(400).send({ error: 'Error creating new nfce' + err })
     }
 });
 

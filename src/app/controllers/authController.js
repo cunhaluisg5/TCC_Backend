@@ -77,6 +77,7 @@ router.post('/forgot_password', async (req, res) => {
             to: email,
             from: 'cunhaluisg5@gmail.com',
             template: 'auth/forgot_password',
+            subject: 'Recuperação de Senha',
             context: { token }
         }, (err) => {
             if(err) {
