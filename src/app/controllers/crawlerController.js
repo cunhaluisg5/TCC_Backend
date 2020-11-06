@@ -105,7 +105,7 @@ router.post('/', async (req, res) => {
             nfce === null ? res.status(400).send({}) : res.status(201).send({nfce});
         })
     } catch (err) {
-        res.status(400).send({ error: 'Error on crawler' })
+        res.status(400).send({ error: 'Erro no processo de crawler!' })
     }
 })
 

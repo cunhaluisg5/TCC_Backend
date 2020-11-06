@@ -14,7 +14,7 @@ router.get('/', async (req, res) => {
 
         return res.send({ nfces });
     } catch (err) {
-        res.status(400).send({ error: 'Error loading nfces' })
+        res.status(400).send({ error: 'Erro ao consultar NFC-e!' })
     }
 });
 
@@ -24,7 +24,7 @@ router.get('/user/:userId', async (req, res) => {
 
         return res.send({ nfces });
     } catch (err) {
-        res.status(400).send({ error: 'Error loading nfces' })
+        res.status(400).send({ error: 'Erro ao consultar NFC-e!' })
     }
 });
 
@@ -34,7 +34,7 @@ router.get('/:nfceId', async (req, res) => {
 
         return res.send({ nfce });
     } catch (err) {
-        res.status(400).send({ error: 'Error loading nfce' })
+        res.status(400).send({ error: 'Erro ao consultar NFC-e!' })
     }
 });
 
@@ -44,7 +44,7 @@ router.post('/', async (req, res) => {
         const { accesskey } = detailsNfce;
 
         if(await Nfce.findOne({ accesskey, user: req.userId })) {
-            return res.status(400).send({ error: 'Nfce already exists' });
+            return res.status(400).send({ error: 'NFC-e já existente!' });
         }
 
         const nfce = await Nfce.create({ user: req.userId, ...details, ...detailsNfce });
@@ -59,7 +59,7 @@ router.post('/', async (req, res) => {
         await nfce.save();
         return res.status(201).send({ nfce });
     } catch (err) {
-        res.status(400).send({ error: 'Error creating new nfce' + err })
+        res.status(400).send({ error: 'Erro ao registrar NFC-e!' })
     }
 });
 
@@ -81,7 +81,7 @@ router.put('/:nfceId', async (req, res) => {
         await nfce.save();
         return res.status(201).send({ nfce });
     } catch (err) {
-        res.status(400).send({ error: 'Error updating new nfce' })
+        res.status(400).send({ error: 'Erro ao atualizar NFC-e!' })
     }
 });
 
@@ -91,7 +91,7 @@ router.delete('/:nfceId', async (req, res) => {
 
         return res.send();
     } catch (err) {
-        res.status(400).send({ error: 'Error deleting nfce' })
+        res.status(400).send({ error: 'Erro ao remover NFC-e!' })
     }
 });
 
