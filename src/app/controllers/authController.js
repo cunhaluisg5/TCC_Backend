@@ -75,7 +75,7 @@ router.post('/forgot_password', async (req, res) => {
 
         mailer.sendMail({
             to: email,
-            from: 'scannfce@gmail.com',
+            from: 'Scan NFC-e',
             template: 'auth/forgot_password',
             subject: 'Recuperação de Senha',
             context: { token }
