@@ -21,7 +21,7 @@
     "nodemailer-express-handlebars": "^4.0.0",
     "path": "^0.12.7",
     "request": "^2.88.2",
-    "validator": "^13.1.1"
+    "validator": "^13.7.0"
   },
   "devDependencies": {
     "env-cmd": "^10.0.1",
