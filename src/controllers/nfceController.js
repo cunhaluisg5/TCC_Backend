@@ -6,11 +6,11 @@ async function listAll(req, res) {
 }
 
 async function listByUser(req, res) {
-  return sendOk(res, await nfceService.listByUser(req.params.userId));
+  return sendOk(res, await nfceService.listByUser(req.userId, req.params.userId));
 }
 
 async function findById(req, res) {
-  return sendOk(res, await nfceService.findById(req.params.nfceId));
+  return sendOk(res, await nfceService.findById(req.userId, req.params.nfceId));
 }
 
 async function create(req, res) {
@@ -18,11 +18,11 @@ async function create(req, res) {
 }
 
 async function update(req, res) {
-  return sendCreated(res, await nfceService.update(req.params.nfceId, req.body));
+  return sendCreated(res, await nfceService.update(req.userId, req.params.nfceId, req.body));
 }
 
 async function remove(req, res) {
-  await nfceService.remove(req.params.nfceId);
+  await nfceService.remove(req.userId, req.params.nfceId);
   return sendNoContent(res);
 }
 

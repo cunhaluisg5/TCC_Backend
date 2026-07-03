@@ -18,13 +18,14 @@ src/
   controllers/   adaptadores HTTP
   db/            inicializacao do Firebase
   http/          bootstrap da aplicacao Express
-  middlewares/   autenticacao e tratamento de erro
+  middlewares/   autenticacao, rate limit, validacao e tratamento de erro
   modules/       integracoes auxiliares, como mailer
   repositories/  acesso a dados
   resources/     templates e arquivos estaticos usados pelo backend
   routes/        definicao publica das rotas
   services/      regras de negocio
-  utils/         helpers HTTP e erros de dominio
+  utils/         helpers HTTP, validacao e erros de dominio
+  validators/    regras de validacao de payload
 ```
 
 ## Variaveis de ambiente
@@ -37,6 +38,11 @@ Variaveis principais:
 - `JWT_SECRET`
 - `JWT_EXPIRES_IN`
 - `RESET_APP_URL`
+- `CORS_ORIGIN`
+- `RATE_LIMIT_WINDOW_MS`
+- `RATE_LIMIT_MAX`
+- `AUTH_RATE_LIMIT_MAX`
+- `JSON_LIMIT`
 - `FIREBASE_PROJECT_ID`
 - `FIREBASE_CLIENT_EMAIL`
 - `FIREBASE_PRIVATE_KEY`
@@ -46,7 +52,15 @@ Variaveis principais:
 - `MAIL_SECURE`
 - `MAIL_USER`
 - `MAIL_PASS`
-- `CORS_ORIGIN`
+
+## Seguranca aplicada nesta fase
+
+- `helmet` para headers de seguranca
+- `express-rate-limit` para autenticacao e uso geral da API
+- limite de payload JSON
+- validacao de payload para auth, reset, crawler e NFC-e
+- protecao de alteracao de usuario por dono do recurso
+- protecao de leitura, edicao e exclusao de NFC-e por dono do recurso
 
 ## Scripts
 
@@ -54,7 +68,3 @@ Variaveis principais:
 npm run dev
 npm start
 ```
-
-## Estado atual da modernizacao
-
-Esta fase estabelece a base de configuracao segura do backend e introduz separacao em camadas, preservando os endpoints existentes.

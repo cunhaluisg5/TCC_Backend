@@ -5,6 +5,13 @@ const mailer = require('../modules/mailer');
 const userRepository = require('../repositories/userRepository');
 const { jwtSecret, jwtExpiresIn, resetAppUrl } = require('../config/auth');
 const { HttpError } = require('../utils/httpError');
+const {
+  validateAuthenticate,
+  validateForgotPassword,
+  validateRegister,
+  validateResetPassword,
+  validateUpdateProfile
+} = require('../validators/authValidators');
 
 function generateToken(params = {}) {
   return jwt.sign(params, jwtSecret, {
@@ -13,6 +20,7 @@ function generateToken(params = {}) {
 }
 
 async function register(payload) {
+  validateRegister(payload);
   const { email } = payload;
 
   if (await userRepository.findByEmail(email)) {
@@ -23,7 +31,9 @@ async function register(payload) {
   return { user, token: generateToken({ id: user.id }) };
 }
 
-async function authenticate({ email, password }) {
+async function authenticate(payload) {
+  validateAuthenticate(payload);
+  const { email, password } = payload;
   const user = await userRepository.findByEmail(email, { includeSensitive: true });
 
   if (!user) {
@@ -41,7 +51,9 @@ async function authenticate({ email, password }) {
   return { user, token: generateToken({ id: user.id }) };
 }
 
-async function forgotPassword({ email }) {
+async function forgotPassword(payload) {
+  validateForgotPassword(payload);
+  const { email } = payload;
   const user = await userRepository.findByEmail(email);
 
   if (!user) {
@@ -75,7 +87,9 @@ async function forgotPassword({ email }) {
   });
 }
 
-async function resetPassword({ email, token, password }) {
+async function resetPassword(payload) {
+  validateResetPassword(payload);
+  const { email, token, password } = payload;
   const user = await userRepository.findByEmail(email, { includeSensitive: true });
 
   if (!user) {
@@ -99,8 +113,9 @@ async function resetPassword({ email, token, password }) {
   });
 }
 
-async function updateProfile(userId, { name }) {
-  const user = await userRepository.updateUser(userId, { name });
+async function updateProfile(userId, payload) {
+  validateUpdateProfile(payload);
+  const user = await userRepository.updateUser(userId, { name: payload.name });
 
   if (!user) {
     throw new HttpError(404, 'Usuario nao encontrado!');
