@@ -4,28 +4,28 @@ const authConfig = require('../../config/auth.json');
 module.exports = (req, res, next) => {
     const authHeader = req.headers.authorization;
 
-    if(!authHeader) {
+    if (!authHeader) {
         return res.status(401).send({ error: 'Nenhum token fornecido!' });
     }
 
     const parts = authHeader.split(' ');
 
-    if(!parts.length === 2) {
+    if (parts.length !== 2) {
         return res.status(401).send({ error: 'Erro no token!' });
     }
 
-    const [ scheme, token ] = parts;
+    const [scheme, token] = parts;
 
-    if(!/^Bearer$/i.test(scheme)) {
+    if (!/^Bearer$/i.test(scheme)) {
         return res.status(401).send({ error: 'Token formatado incorretamente!' });
     }
 
     jwt.verify(token, authConfig.secret, (err, decoded) => {
-        if(err) {
+        if (err) {
             return res.status(401).send({ error: 'Token inválido!' });
         }
 
         req.userId = decoded.id;
         return next();
-    })
-}
+    });
+};

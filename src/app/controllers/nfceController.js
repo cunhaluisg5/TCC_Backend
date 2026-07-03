@@ -1,8 +1,6 @@
 const express = require('express');
 const authMiddleware = require('../middlewares/auth');
-
-const Nfce = require('../models/Nfce');
-const Item = require('../models/Item');
+const nfceRepository = require('../repositories/nfceRepository');
 
 const router = express.Router();
 
@@ -10,31 +8,35 @@ router.use(authMiddleware);
 
 router.get('/', async (req, res) => {
     try {
-        const nfces = await Nfce.find().populate(['user', 'items']);
+        const nfces = await nfceRepository.listNfces();
 
         return res.send({ nfces });
     } catch (err) {
-        res.status(400).send({ error: 'Erro ao consultar NFC-e!' })
+        return res.status(400).send({ error: 'Erro ao consultar NFC-e!' });
     }
 });
 
 router.get('/user/:userId', async (req, res) => {
     try {
-        const nfces = await Nfce.find({ "user": req.params.userId }).populate(['user', 'items']);
+        const nfces = await nfceRepository.listNfcesByUser(req.params.userId);
 
         return res.send({ nfces });
     } catch (err) {
-        res.status(400).send({ error: 'Erro ao consultar NFC-e!' })
+        return res.status(400).send({ error: 'Erro ao consultar NFC-e!' });
     }
 });
 
 router.get('/:nfceId', async (req, res) => {
     try {
-        const nfce = await Nfce.findById(req.params.nfceId).populate(['user', 'items']);
+        const nfce = await nfceRepository.findNfceById(req.params.nfceId);
+
+        if (!nfce) {
+            return res.status(404).send({ error: 'NFC-e não encontrada!' });
+        }
 
         return res.send({ nfce });
     } catch (err) {
-        res.status(400).send({ error: 'Erro ao consultar NFC-e!' })
+        return res.status(400).send({ error: 'Erro ao consultar NFC-e!' });
     }
 });
 
@@ -43,55 +45,49 @@ router.post('/', async (req, res) => {
         const { items, details, detailsNfce } = req.body.nfce;
         const { accesskey } = detailsNfce;
 
-        if(await Nfce.findOne({ accesskey, user: req.userId })) {
+        if (await nfceRepository.findNfceByAccessKeyForUser(accesskey, req.userId)) {
             return res.status(400).send({ error: 'NFC-e já existente!' });
         }
 
-        const nfce = await Nfce.create({ user: req.userId, ...details, ...detailsNfce });
-        console.log('NFCE: ', nfce)
+        const nfce = await nfceRepository.createNfce({
+            userId: req.userId,
+            items,
+            details,
+            detailsNfce
+        });
 
-        await Promise.all(items.map(async item => {
-            const nfceItem = new Item({ ...item, nfce: nfce._id });
-            await nfceItem.save();
-            nfce.items.push(nfceItem);
-        }));
-
-        await nfce.save();
         return res.status(201).send({ nfce });
     } catch (err) {
-        res.status(400).send({ error: 'Erro ao registrar NFC-e!' })
+        return res.status(400).send({ error: 'Erro ao registrar NFC-e!' });
     }
 });
 
 router.put('/:nfceId', async (req, res) => {
     try {
         const { items, details, detailsNfce } = req.body.nfce;
-        const nfce = await Nfce.findByIdAndUpdate(req.params.nfceId, { ...details, ...detailsNfce }, 
-            { new: true });
+        const nfce = await nfceRepository.updateNfce(req.params.nfceId, {
+            items,
+            details,
+            detailsNfce
+        });
 
-        nfce.items = [];
-        await Item.remove({ nfce: nfce._id });
+        if (!nfce) {
+            return res.status(404).send({ error: 'NFC-e não encontrada!' });
+        }
 
-        await Promise.all(items.map(async item => {
-            const nfceItem = new Item({ ...item, nfce: nfce._id });
-            await nfceItem.save();
-            nfce.items.push(nfceItem);
-        }));
-
-        await nfce.save();
         return res.status(201).send({ nfce });
     } catch (err) {
-        res.status(400).send({ error: 'Erro ao atualizar NFC-e!' })
+        return res.status(400).send({ error: 'Erro ao atualizar NFC-e!' });
     }
 });
 
 router.delete('/:nfceId', async (req, res) => {
     try {
-        await Nfce.findByIdAndRemove(req.params.nfceId);
+        await nfceRepository.deleteNfce(req.params.nfceId);
 
         return res.send();
     } catch (err) {
-        res.status(400).send({ error: 'Erro ao remover NFC-e!' })
+        return res.status(400).send({ error: 'Erro ao remover NFC-e!' });
     }
 });
 
