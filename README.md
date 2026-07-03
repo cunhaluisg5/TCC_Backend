@@ -1,16 +1,25 @@
-## Scan NFC-e Back-End
+﻿# Scan NFC-e Back-End
 
-Aplicação back-end do app [Scan NFC-e](https://github.com/cunhaluisg5/Scan_NFCe).
+API principal do ecossistema Scan NFC-e, responsavel por autenticacao, recuperacao de senha, crawler da NFC-e e persistencia em Firebase Realtime Database.
 
-## Sobre
+## Responsabilidades
 
-O projeto foi desenvolvido em [Node.js](https://nodejs.org/en/) e agora utiliza [Firebase Realtime Database](https://firebase.google.com/docs/database) como banco de dados.
+- cadastro e autenticacao de usuarios
+- emissao e validacao de token
+- recuperacao e redefinicao de senha
+- crawler da NFC-e
+- armazenamento e consulta de notas fiscais
 
-## Variáveis de ambiente
+## Variaveis de ambiente
 
-Preencha o arquivo `.env` com:
+Crie um `.env` a partir de `.env.example`.
+
+Variaveis principais:
 
 - `PORT`
+- `JWT_SECRET`
+- `JWT_EXPIRES_IN`
+- `RESET_APP_URL`
 - `FIREBASE_PROJECT_ID`
 - `FIREBASE_CLIENT_EMAIL`
 - `FIREBASE_PRIVATE_KEY`
@@ -21,16 +30,18 @@ Preencha o arquivo `.env` com:
 - `MAIL_USER`
 - `MAIL_PASS`
 
-## Dependências principais
+## Scripts
 
-- [axios](https://www.npmjs.com/package/axios)
-- [bcryptjs](https://www.npmjs.com/package/bcryptjs)
-- [cheerio](https://www.npmjs.com/package/cheerio)
-- [cors](https://www.npmjs.com/package/cors)
-- [dotenv](https://www.npmjs.com/package/dotenv)
-- [express](https://www.npmjs.com/package/express)
-- [firebase-admin](https://www.npmjs.com/package/firebase-admin)
-- [jsonwebtoken](https://www.npmjs.com/package/jsonwebtoken)
-- [nodemailer](https://www.npmjs.com/package/nodemailer)
-- [nodemailer-express-handlebars](https://www.npmjs.com/package/nodemailer-express-handlebars)
-- [validator](https://www.npmjs.com/package/validator)
+```bash
+npm run dev
+npm start
+```
+
+## Estado atual da modernizacao
+
+Esta fase estabelece a base de configuracao segura do backend:
+
+- remocao do segredo JWT versionado
+- centralizacao de configuracao em ambiente
+- parametrizacao da URL do fluxo de reset
+- documentacao inicial do repositorio
