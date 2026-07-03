@@ -1,28 +1,29 @@
 ﻿const jwt = require('jsonwebtoken');
-const { jwtSecret } = require('../../config/auth');
+const { jwtSecret } = require('../config/auth');
+const { HttpError } = require('../utils/httpError');
 
 module.exports = (req, res, next) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader) {
-    return res.status(401).send({ error: 'Nenhum token fornecido!' });
+    return next(new HttpError(401, 'Nenhum token fornecido!'));
   }
 
   const parts = authHeader.split(' ');
 
   if (parts.length !== 2) {
-    return res.status(401).send({ error: 'Erro no token!' });
+    return next(new HttpError(401, 'Erro no token!'));
   }
 
   const [scheme, token] = parts;
 
   if (!/^Bearer$/i.test(scheme)) {
-    return res.status(401).send({ error: 'Token formatado incorretamente!' });
+    return next(new HttpError(401, 'Token formatado incorretamente!'));
   }
 
   jwt.verify(token, jwtSecret, (err, decoded) => {
     if (err) {
-      return res.status(401).send({ error: 'Token invalido!' });
+      return next(new HttpError(401, 'Token invalido!'));
     }
 
     req.userId = decoded.id;

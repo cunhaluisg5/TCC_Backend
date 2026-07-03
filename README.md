@@ -10,6 +10,23 @@ API principal do ecossistema Scan NFC-e, responsavel por autenticacao, recuperac
 - crawler da NFC-e
 - armazenamento e consulta de notas fiscais
 
+## Arquitetura atual
+
+```text
+src/
+  config/        configuracoes de ambiente e autenticacao
+  controllers/   adaptadores HTTP
+  db/            inicializacao do Firebase
+  http/          bootstrap da aplicacao Express
+  middlewares/   autenticacao e tratamento de erro
+  modules/       integracoes auxiliares, como mailer
+  repositories/  acesso a dados
+  resources/     templates e arquivos estaticos usados pelo backend
+  routes/        definicao publica das rotas
+  services/      regras de negocio
+  utils/         helpers HTTP e erros de dominio
+```
+
 ## Variaveis de ambiente
 
 Crie um `.env` a partir de `.env.example`.
@@ -29,6 +46,7 @@ Variaveis principais:
 - `MAIL_SECURE`
 - `MAIL_USER`
 - `MAIL_PASS`
+- `CORS_ORIGIN`
 
 ## Scripts
 
@@ -39,9 +57,4 @@ npm start
 
 ## Estado atual da modernizacao
 
-Esta fase estabelece a base de configuracao segura do backend:
-
-- remocao do segredo JWT versionado
-- centralizacao de configuracao em ambiente
-- parametrizacao da URL do fluxo de reset
-- documentacao inicial do repositorio
+Esta fase estabelece a base de configuracao segura do backend e introduz separacao em camadas, preservando os endpoints existentes.
