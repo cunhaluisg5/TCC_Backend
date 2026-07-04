@@ -1,0 +1,16 @@
+﻿process.env.NODE_ENV = 'test';
+process.env.PORT = '3000';
+process.env.PUBLIC_BASE_URL = 'http://localhost:3000';
+process.env.JWT_SECRET = 'test-secret';
+process.env.JWT_EXPIRES_IN = '30d';
+process.env.RESET_APP_URL = 'https://reset.example.com';
+process.env.CORS_ORIGIN = 'http://localhost:8081';
+process.env.RATE_LIMIT_WINDOW_MS = '900000';
+process.env.RATE_LIMIT_MAX = '100';
+process.env.AUTH_RATE_LIMIT_MAX = '10';
+process.env.JSON_LIMIT = '1mb';
+process.env.MAIL_HOST = 'smtp.example.com';
+process.env.MAIL_PORT = '587';
+process.env.MAIL_SECURE = 'false';
+process.env.MAIL_USER = 'test@example.com';
+process.env.MAIL_PASS = 'secret';
