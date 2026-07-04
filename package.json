@@ -4,7 +4,9 @@
     "scripts":  {
                     "start":  "node src/app.js",
                     "dev":  "nodemon src/app.js",
-                    "test":  "jest --runInBand"
+                    "test":  "jest --runInBand",
+                    "check:swagger":  "node -e \"const spec=require('./src/docs/swaggerSpec'); if (!spec.openapi || !spec.paths) throw new Error('Swagger spec invalida'); console.log('swagger spec ok');\"",
+                    "ci":  "npm run check:swagger && npm test"
                 },
     "repository":  "",
     "author":  "",

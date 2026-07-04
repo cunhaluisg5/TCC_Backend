@@ -75,4 +75,17 @@ Variaveis principais:
 ```bash
 npm run dev
 npm start
+npm run check:swagger
+npm test
+npm run ci
 ```
+
+## Integracao continua
+
+O repositório agora possui workflow em `.github/workflows/backend-ci.yml` para validar automaticamente:
+
+- instalacao das dependencias com `npm ci`
+- integridade da especificacao Swagger
+- suite automatizada de testes
+
+O pipeline nao depende de Firebase real nem de credenciais externas para a validacao atual, porque os testes usam mocks nos pontos de integracao.
