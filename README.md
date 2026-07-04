@@ -9,6 +9,7 @@ API principal do ecossistema Scan NFC-e, responsavel por autenticacao, recuperac
 - recuperacao e redefinicao de senha
 - crawler da NFC-e
 - armazenamento e consulta de notas fiscais
+- documentacao publica da API via Swagger
 
 ## Arquitetura atual
 
@@ -17,6 +18,7 @@ src/
   config/        configuracoes de ambiente e autenticacao
   controllers/   adaptadores HTTP
   db/            inicializacao do Firebase
+  docs/          especificacao OpenAPI/Swagger
   http/          bootstrap da aplicacao Express
   middlewares/   autenticacao, rate limit, validacao e tratamento de erro
   modules/       integracoes auxiliares, como mailer
@@ -35,6 +37,7 @@ Crie um `.env` a partir de `.env.example`.
 Variaveis principais:
 
 - `PORT`
+- `PUBLIC_BASE_URL`
 - `JWT_SECRET`
 - `JWT_EXPIRES_IN`
 - `RESET_APP_URL`
@@ -53,7 +56,12 @@ Variaveis principais:
 - `MAIL_USER`
 - `MAIL_PASS`
 
-## Seguranca aplicada nesta fase
+## Documentacao da API
+
+- Swagger UI: `/docs`
+- OpenAPI JSON: `/docs.json`
+
+## Seguranca aplicada
 
 - `helmet` para headers de seguranca
 - `express-rate-limit` para autenticacao e uso geral da API
