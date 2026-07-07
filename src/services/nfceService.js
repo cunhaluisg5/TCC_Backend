@@ -1,9 +1,11 @@
 ﻿const nfceRepository = require('../repositories/nfceRepository');
 const { HttpError } = require('../utils/httpError');
+const { normalizeAccessKey, normalizeNfcePayload, normalizePersistedNfce } = require('../utils/nfceNormalizer');
 const { validateNfcePayload } = require('../validators/nfceValidators');
 
 async function listAll() {
-  return { nfces: await nfceRepository.listNfces() };
+  const nfces = await nfceRepository.listNfces();
+  return { nfces: nfces.map(normalizePersistedNfce) };
 }
 
 async function listByUser(currentUserId, userId) {
@@ -11,7 +13,8 @@ async function listByUser(currentUserId, userId) {
     throw new HttpError(403, 'Acesso negado para este usuario!');
   }
 
-  return { nfces: await nfceRepository.listNfcesByUser(userId) };
+  const nfces = await nfceRepository.listNfcesByUser(userId);
+  return { nfces: nfces.map(normalizePersistedNfce) };
 }
 
 async function findById(currentUserId, nfceId) {
@@ -25,13 +28,14 @@ async function findById(currentUserId, nfceId) {
     throw new HttpError(403, 'Acesso negado para esta NFC-e!');
   }
 
-  return { nfce };
+  return { nfce: normalizePersistedNfce(nfce) };
 }
 
 async function create(userId, payload) {
   validateNfcePayload(payload);
-  const { items, details, detailsNfce } = payload.nfce;
-  const { accesskey } = detailsNfce;
+  const normalizedPayload = normalizeNfcePayload(payload);
+  const { items, details, detailsNfce } = normalizedPayload.nfce;
+  const accesskey = normalizeAccessKey(detailsNfce.accesskey);
 
   if (await nfceRepository.findNfceByAccessKeyForUser(accesskey, userId)) {
     throw new HttpError(400, 'NFC-e ja existente!');
@@ -41,10 +45,10 @@ async function create(userId, payload) {
     userId,
     items,
     details,
-    detailsNfce
+    detailsNfce,
   });
 
-  return { nfce };
+  return { nfce: normalizePersistedNfce(nfce) };
 }
 
 async function update(currentUserId, nfceId, payload) {
@@ -59,14 +63,21 @@ async function update(currentUserId, nfceId, payload) {
     throw new HttpError(403, 'Acesso negado para esta NFC-e!');
   }
 
-  const { items, details, detailsNfce } = payload.nfce;
+  const normalizedPayload = normalizeNfcePayload(payload);
+  const { items, details, detailsNfce } = normalizedPayload.nfce;
+  const duplicated = await nfceRepository.findNfceByAccessKeyForUser(detailsNfce.accesskey, currentUserId);
+
+  if (duplicated && String(duplicated.id) !== String(nfceId)) {
+    throw new HttpError(400, 'NFC-e ja existente!');
+  }
+
   const nfce = await nfceRepository.updateNfce(nfceId, {
     items,
     details,
-    detailsNfce
+    detailsNfce,
   });
 
-  return { nfce };
+  return { nfce: normalizePersistedNfce(nfce) };
 }
 
 async function remove(currentUserId, nfceId) {
@@ -89,5 +100,5 @@ module.exports = {
   listAll,
   listByUser,
   remove,
-  update
+  update,
 };

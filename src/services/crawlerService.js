@@ -1,123 +1,146 @@
 ﻿const axios = require('axios');
 const cheerio = require('cheerio');
 
-async function crawl(url) {
-  const nfce = {};
+const { HttpError } = require('../utils/httpError');
+const {
+  cleanText,
+  isMgNfce,
+  normalizeAccessKey,
+  normalizeDecimal,
+  normalizeNfcePayload,
+} = require('../utils/nfceNormalizer');
+
+function extractAccessKey(url, $) {
+  const collapseText = cleanText($('#collapseTwo').text());
+  if (collapseText) {
+    return normalizeAccessKey(collapseText);
+  }
+
+  const urlMatch = String(url || '').match(/p=([^&]+)/i);
+  if (urlMatch && urlMatch[1]) {
+    return normalizeAccessKey(urlMatch[1].split('|')[0]);
+  }
+
+  const htmlMatch = $.html().match(/[A-Z0-9-]{10,}/);
+  return htmlMatch ? normalizeAccessKey(htmlMatch[0]) : '';
+}
+
+function extractItems($) {
   const items = [];
 
-  const response = await axios.get(url);
-  const html = response.data;
-  const $ = cheerio.load(html);
-
-  $('#myTable tr').each(function () {
-    const itemText = $(this).find('td').eq(0).text().replace(/\t/g, '').split('\n');
-    const itemName = itemText[0];
-    const itemCode = (itemText[1] || '').replace('(CÃ³digo: ', '').replace(')', '');
-    const qtdItem = $(this).find('td').eq(1).text().replace('Qtde total de Ã­tens: ', '');
-    const unItem = $(this).find('td').eq(2).text().replace('UN: ', '');
-    const itemValue = $(this).find('td').eq(3).text().replace('Valor total R$: R$ ', '')
-      .replace(',', '.');
-
-    items.push({ itemName, itemCode, qtdItem, unItem, itemValue });
-  });
-
-  nfce.items = items;
-
-  let counter = 0;
-  let totalItems;
-  let totalValue;
-  let paidValue;
-  let typePayment;
-
-  $('.row').each(function () {
-    switch (counter) {
-      case 0:
-        totalItems = $(this).find('strong').eq(1).text().replace(/\t/g, '');
-        break;
-      case 1:
-        totalValue = $(this).find('strong').eq(1).text().replace(/\t/g, '');
-        break;
-      case 2:
-        paidValue = $(this).find('strong').eq(1).text().replace(/\t/g, '');
-        break;
-      case 3: {
-        const type = $(this).find('strong').text().replace(/\t/g, '').split('- ');
-        typePayment = type[1];
-        break;
-      }
+  $('#myTable tr').each((index, row) => {
+    const cells = $(row).find('td');
+    if (!cells.length) {
+      return;
     }
 
-    counter += 1;
+    const firstCellText = cleanText($(cells[0]).text().replace(/\n/g, ' '));
+    const itemName = cleanText(firstCellText.replace(/\(C[oó]digo:[^)]+\)/i, ''));
+    const itemCodeMatch = firstCellText.match(/C[oó]digo:\s*([^)]+)/i);
+    const qtdRaw = cleanText($(cells[1]).text()).replace(/^Qtde total de [ií]tens:\s*/i, '');
+    const unitRaw = cleanText($(cells[2]).text()).replace(/^UN:\s*/i, '');
+    const valueRaw = cleanText($(cells[3]).text()).replace(/^Valor total R\$:\s*/i, '');
+
+    if (!itemName && !valueRaw) {
+      return;
+    }
+
+    items.push({
+      itemName,
+      itemCode: cleanText(itemCodeMatch ? itemCodeMatch[1] : ''),
+      qtdItem: qtdRaw,
+      unItem: unitRaw,
+      itemValue: normalizeDecimal(valueRaw),
+    });
   });
 
-  nfce.details = { totalItems, totalValue, paidValue, typePayment };
+  return items;
+}
 
-  let accesskey;
-  $('#collapseTwo').each(function () {
-    accesskey = $(this).find('td').eq(0).text();
-  });
+function extractSummary($) {
+  const summaryRows = $('.row').map((_, row) => cleanText($(row).text())).get().filter(Boolean);
+  const totalItems = summaryRows[0] || '0';
+  const totalValue = summaryRows[1] || '0';
+  const paidValue = summaryRows[2] || totalValue;
+  const paymentRow = summaryRows[3] || '';
+  const typePayment = paymentRow.includes('-') ? cleanText(paymentRow.split('-').pop()) : paymentRow;
 
-  let socialName;
-  let cnpj;
-  let stateRegistration;
-  let uf;
-  let operationDestination;
-  let finalCostumer;
-  let buyerPresence;
-  let model;
-  let series;
-  let number;
-  let issuanceDate;
-  let totalValueService;
-  let icmsCalculationBasis;
-  let icmsValue;
-  let protocol;
-
-  $('#collapse4').each(function () {
-    socialName = $(this).find('td').eq(0).text();
-    cnpj = $(this).find('td').eq(1).text();
-    stateRegistration = $(this).find('td').eq(2).text();
-    uf = $(this).find('td').eq(3).text();
-    operationDestination = $(this).find('td').eq(4).text();
-    finalCostumer = $(this).find('td').eq(5).text();
-    buyerPresence = $(this).find('td').eq(6).text();
-    model = $(this).find('td').eq(7).text();
-    series = $(this).find('td').eq(8).text();
-    number = $(this).find('td').eq(9).text();
-    issuanceDate = $(this).find('td').eq(10).text();
-    totalValueService = $(this).find('td').eq(11).text().replace('R$ ', '').replace(',', '.');
-    icmsCalculationBasis = $(this).find('td').eq(12).text().replace('R$ ', '').replace(',', '.');
-    icmsValue = $(this).find('td').eq(13).text().replace('R$ ', '').replace(',', '.');
-    protocol = $(this).find('td').eq(14).text();
-  });
-
-  nfce.detailsNfce = {
-    accesskey,
+  return {
     totalItems,
     totalValue,
     paidValue,
     typePayment,
-    socialName,
-    cnpj,
-    stateRegistration,
-    uf,
-    operationDestination,
-    finalCostumer,
-    buyerPresence,
-    model,
-    series,
-    number,
-    issuanceDate,
-    totalValueService,
-    icmsCalculationBasis,
-    icmsValue,
-    protocol,
-    url
   };
+}
 
-  return { nfce };
+function extractDetails($, url) {
+  const cells = $('#collapse4 td').map((_, cell) => cleanText($(cell).text())).get();
+
+  return {
+    accesskey: extractAccessKey(url, $),
+    socialName: cells[0] || '',
+    cnpj: cells[1] || '',
+    stateRegistration: cells[2] || '',
+    uf: cells[3] || '',
+    operationDestination: cells[4] || '',
+    finalCostumer: cells[5] || '',
+    buyerPresence: cells[6] || '',
+    model: cells[7] || '',
+    series: cells[8] || '',
+    number: cells[9] || '',
+    issuanceDate: cells[10] || '',
+    totalValueService: cells[11] || '',
+    icmsCalculationBasis: cells[12] || '',
+    icmsValue: cells[13] || '',
+    protocol: cells[14] || '',
+    url,
+  };
+}
+
+async function crawl(url) {
+  try {
+    const response = await axios.get(url, {
+      timeout: 15000,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 ScanNFCe/2.0',
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      },
+    });
+
+    const $ = cheerio.load(response.data);
+    const items = extractItems($);
+    const details = extractSummary($);
+    const detailsNfce = extractDetails($, url);
+    const normalized = normalizeNfcePayload({
+      nfce: {
+        items,
+        details,
+        detailsNfce,
+      },
+    });
+
+    if (!normalized.nfce.detailsNfce.accesskey) {
+      throw new HttpError(422, 'Nao foi possivel identificar a chave de acesso da NFC-e.');
+    }
+
+    if (!isMgNfce(normalized.nfce.detailsNfce)) {
+      throw new HttpError(422, 'A leitura nao corresponde a uma NFC-e valida de Minas Gerais.');
+    }
+
+    return normalized;
+  } catch (error) {
+    if (error instanceof HttpError) {
+      throw error;
+    }
+
+    if (error.response) {
+      throw new HttpError(502, 'O portal da Fazenda retornou uma resposta inesperada.');
+    }
+
+    throw new HttpError(503, 'Nao foi possivel consultar o portal da Fazenda no momento.');
+  }
 }
 
 module.exports = {
-  crawl
+  crawl,
 };

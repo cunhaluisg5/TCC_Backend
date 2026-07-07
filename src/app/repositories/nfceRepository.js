@@ -1,5 +1,6 @@
 const { getDatabase } = require('../../db/firebase');
 const userRepository = require('./userRepository');
+const { normalizeAccessKey } = require('../../utils/nfceNormalizer');
 
 const NFCES_PATH = 'nfces';
 const ITEMS_PATH = 'items';
@@ -25,12 +26,23 @@ async function listCollection(ref) {
     return snapshot.val() || {};
 }
 
-async function hydrateItems(itemIds = []) {
-    const items = await listCollection(itemsRef());
+function toPersistedItem(nfceId, userId, item = {}) {
+    return {
+        nfce: nfceId,
+        assignedTo: item.assignedTo || userId,
+        createdAt: item.createdAt || new Date().toISOString(),
+        itemName: item.itemName || '',
+        itemCode: item.itemCode || '',
+        qtdItem: item.qtdItem ?? '0.00',
+        unItem: item.unItem || '',
+        itemValue: item.itemValue ?? '0.00'
+    };
+}
 
+function hydrateItemsFromMap(itemsMap = {}, itemIds = []) {
     return itemIds
         .map((itemId) => {
-            const item = items[itemId];
+            const item = itemsMap[itemId];
 
             if (!item) {
                 return null;
@@ -39,6 +51,11 @@ async function hydrateItems(itemIds = []) {
             return withIdentifiers(itemId, item);
         })
         .filter(Boolean);
+}
+
+async function hydrateItems(itemIds = []) {
+    const items = await listCollection(itemsRef());
+    return hydrateItemsFromMap(items, itemIds);
 }
 
 async function hydrateNfce(id, data) {
@@ -58,6 +75,14 @@ async function hydrateNfce(id, data) {
     };
 }
 
+function buildHydratedNfce(id, data, user, items) {
+    return {
+        ...withIdentifiers(id, data),
+        user,
+        items
+    };
+}
+
 async function listNfces() {
     const nfces = await listCollection(nfcesRef());
     return Promise.all(
@@ -67,7 +92,7 @@ async function listNfces() {
 
 async function listNfcesByUser(userId) {
     const nfces = await listNfces();
-    return nfces.filter((nfce) => nfce.user && nfce.user.id === userId);
+    return nfces.filter((nfce) => nfce.user && String(nfce.user.id) === String(userId));
 }
 
 async function findNfceById(id) {
@@ -81,10 +106,11 @@ async function findNfceById(id) {
 }
 
 async function findNfceByAccessKeyForUser(accesskey, userId) {
+    const normalizedAccessKey = normalizeAccessKey(accesskey);
     const nfces = await listCollection(nfcesRef());
 
     for (const [id, nfce] of Object.entries(nfces)) {
-        if (nfce.accesskey === accesskey && nfce.user === userId) {
+        if (normalizeAccessKey(nfce.accesskey) === normalizedAccessKey && String(nfce.user) === String(userId)) {
             return withIdentifiers(id, nfce);
         }
     }
@@ -93,26 +119,27 @@ async function findNfceByAccessKeyForUser(accesskey, userId) {
 }
 
 async function saveItems(nfceId, userId, items = []) {
+    if (!items.length) {
+        return { itemIds: [], itemsMap: {} };
+    }
+
+    const rootRef = getDatabase().ref();
+    const updates = {};
     const itemIds = [];
+    const itemsMap = {};
 
     for (const item of items) {
         const ref = itemsRef().push();
-        const payload = {
-            nfce: nfceId,
-            assignedTo: item.assignedTo || userId,
-            createdAt: item.createdAt || new Date().toISOString(),
-            itemName: item.itemName || '',
-            itemCode: item.itemCode || '',
-            qtdItem: item.qtdItem ?? null,
-            unItem: item.unItem || '',
-            itemValue: item.itemValue ?? null
-        };
+        const payload = toPersistedItem(nfceId, userId, item);
 
-        await ref.set(payload);
+        updates[`${ITEMS_PATH}/${ref.key}`] = payload;
         itemIds.push(ref.key);
+        itemsMap[ref.key] = payload;
     }
 
-    return itemIds;
+    await rootRef.update(updates);
+
+    return { itemIds, itemsMap };
 }
 
 async function deleteItemsByNfceId(nfceId) {
@@ -131,18 +158,23 @@ async function deleteItemsByNfceId(nfceId) {
 async function createNfce({ userId, items = [], details = {}, detailsNfce = {} }) {
     const ref = nfcesRef().push();
     const nfceId = ref.key;
-    const itemIds = await saveItems(nfceId, userId, items);
+    const [{ itemIds, itemsMap }, user] = await Promise.all([
+        saveItems(nfceId, userId, items),
+        userRepository.findById(userId)
+    ]);
+
     const payload = {
         user: userId,
         items: itemIds,
         createdAt: new Date().toISOString(),
         ...details,
-        ...detailsNfce
+        ...detailsNfce,
+        accesskey: normalizeAccessKey(detailsNfce.accesskey)
     };
 
     await ref.set(payload);
 
-    return findNfceById(nfceId);
+    return buildHydratedNfce(nfceId, payload, user, hydrateItemsFromMap(itemsMap, itemIds));
 }
 
 async function updateNfce(nfceId, { items = [], details = {}, detailsNfce = {} }) {
@@ -153,13 +185,14 @@ async function updateNfce(nfceId, { items = [], details = {}, detailsNfce = {} }
     }
 
     await deleteItemsByNfceId(nfceId);
-    const itemIds = await saveItems(nfceId, current.user.id, items);
+    const { itemIds, itemsMap } = await saveItems(nfceId, current.user.id, items);
     const payload = {
         ...current,
         ...details,
         ...detailsNfce,
         user: current.user.id,
-        items: itemIds
+        items: itemIds,
+        accesskey: normalizeAccessKey(detailsNfce.accesskey)
     };
 
     delete payload.id;
@@ -167,7 +200,7 @@ async function updateNfce(nfceId, { items = [], details = {}, detailsNfce = {} }
 
     await nfcesRef().child(nfceId).set(payload);
 
-    return findNfceById(nfceId);
+    return buildHydratedNfce(nfceId, payload, current.user, hydrateItemsFromMap(itemsMap, itemIds));
 }
 
 async function deleteNfce(nfceId) {
