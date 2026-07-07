@@ -47,13 +47,29 @@ const swaggerDefinition = {
           email: { type: 'string', format: 'email', example: 'usuario@email.com' }
         }
       },
+      ResetPasswordValidateRequest: {
+        type: 'object',
+        required: ['token'],
+        properties: {
+          token: { type: 'string', example: 'ab12cd34ef56gh78ij90' }
+        }
+      },
       ResetPasswordRequest: {
         type: 'object',
-        required: ['email', 'token', 'password'],
+        required: ['token', 'password'],
         properties: {
           email: { type: 'string', format: 'email', example: 'usuario@email.com' },
           token: { type: 'string', example: 'ab12cd34ef56gh78ij90' },
           password: { type: 'string', minLength: 6, example: 'novaSenha123' }
+        }
+      },
+      ResetPasswordValidationResponse: {
+        type: 'object',
+        properties: {
+          token: { type: 'string', example: 'ab12cd34ef56gh78ij90' },
+          email: { type: 'string', format: 'email', example: 'usuario@email.com' },
+          name: { type: 'string', example: 'Luis Gustavo' },
+          expiresAt: { type: 'string', format: 'date-time' }
         }
       },
       UpdateProfileRequest: {
@@ -212,9 +228,50 @@ const swaggerDefinition = {
           }
         },
         responses: {
-          '204': { description: 'Solicitacao aceita com sucesso' },
+          '200': {
+            description: 'Solicitacao processada com sucesso',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    message: { type: 'string', example: 'Se o e-mail estiver cadastrado, enviaremos as instrucoes de redefinicao.' },
+                    expiresAt: { type: 'string', format: 'date-time', nullable: true }
+                  }
+                }
+              }
+            }
+          },
           '400': {
             description: 'Falha ao solicitar redefinicao de senha',
+            content: { 'application/json': { schema: { '$ref': '#/components/schemas/ErrorResponse' } } }
+          }
+        }
+      }
+    },
+    '/auth/reset_password/validate': {
+      post: {
+        tags: ['Auth'],
+        summary: 'Validar token de redefinicao de senha',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: { '$ref': '#/components/schemas/ResetPasswordValidateRequest' }
+            }
+          }
+        },
+        responses: {
+          '200': {
+            description: 'Token valido e pronto para uso',
+            content: {
+              'application/json': {
+                schema: { '$ref': '#/components/schemas/ResetPasswordValidationResponse' }
+              }
+            }
+          },
+          '400': {
+            description: 'Token invalido ou expirado',
             content: { 'application/json': { schema: { '$ref': '#/components/schemas/ErrorResponse' } } }
           }
         }
@@ -233,7 +290,19 @@ const swaggerDefinition = {
           }
         },
         responses: {
-          '204': { description: 'Senha redefinida com sucesso' },
+          '200': {
+            description: 'Senha redefinida com sucesso',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    message: { type: 'string', example: 'Senha redefinida com sucesso.' }
+                  }
+                }
+              }
+            }
+          },
           '400': {
             description: 'Token ou payload invalidos',
             content: { 'application/json': { schema: { '$ref': '#/components/schemas/ErrorResponse' } } }

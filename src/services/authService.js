@@ -1,4 +1,4 @@
-﻿const bcrypt = require('bcryptjs');
+const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const mailer = require('../modules/mailer');
@@ -10,6 +10,7 @@ const {
   validateForgotPassword,
   validateRegister,
   validateResetPassword,
+  validateResetPasswordToken,
   validateUpdateProfile
 } = require('../validators/authValidators');
 
@@ -17,6 +18,28 @@ function generateToken(params = {}) {
   return jwt.sign(params, jwtSecret, {
     expiresIn: jwtExpiresIn
   });
+}
+
+function getPasswordResetExpiry() {
+  const expiresAt = new Date();
+  expiresAt.setHours(expiresAt.getHours() + 1);
+  return expiresAt.toISOString();
+}
+
+function ensureTokenIsUsable(user) {
+  if (!user) {
+    throw new HttpError(400, 'Token invalido!');
+  }
+
+  if (!user.passwordResetExpires || new Date() > new Date(user.passwordResetExpires)) {
+    throw new HttpError(400, 'Token expirado!');
+  }
+}
+
+async function findUserByResetToken(token) {
+  const user = await userRepository.findByPasswordResetToken(token, { includeSensitive: true });
+  ensureTokenIsUsable(user);
+  return user;
 }
 
 async function register(payload) {
@@ -57,16 +80,17 @@ async function forgotPassword(payload) {
   const user = await userRepository.findByEmail(email);
 
   if (!user) {
-    throw new HttpError(400, 'Usuario nao encontrado!');
+    return {
+      message: 'Se o e-mail estiver cadastrado, enviaremos as instrucoes de redefinicao.'
+    };
   }
 
   const token = crypto.randomBytes(20).toString('hex');
-  const now = new Date();
-  now.setHours(now.getHours() + 1);
+  const expiresAt = getPasswordResetExpiry();
 
   await userRepository.updateUser(user.id, {
     passwordResetToken: token,
-    passwordResetExpires: now.toISOString()
+    passwordResetExpires: expiresAt
   });
 
   await new Promise((resolve, reject) => {
@@ -85,32 +109,43 @@ async function forgotPassword(payload) {
       resolve();
     });
   });
+
+  return {
+    message: 'Se o e-mail estiver cadastrado, enviaremos as instrucoes de redefinicao.',
+    expiresAt
+  };
+}
+
+async function validateResetToken(payload) {
+  validateResetPasswordToken(payload);
+  const user = await findUserByResetToken(payload.token.trim());
+
+  return {
+    token: payload.token.trim(),
+    email: user.email,
+    name: user.name,
+    expiresAt: user.passwordResetExpires
+  };
 }
 
 async function resetPassword(payload) {
   validateResetPassword(payload);
-  const { email, token, password } = payload;
-  const user = await userRepository.findByEmail(email, { includeSensitive: true });
+  const token = payload.token.trim();
+  const user = await findUserByResetToken(token);
 
-  if (!user) {
-    throw new HttpError(400, 'Usuario nao encontrado!');
-  }
-
-  if (token !== user.passwordResetToken) {
-    throw new HttpError(400, 'Token invalido!');
-  }
-
-  const now = new Date();
-
-  if (!user.passwordResetExpires || now > new Date(user.passwordResetExpires)) {
-    throw new HttpError(400, 'Token expirado!');
+  if (payload.email && String(payload.email).toLowerCase() !== String(user.email).toLowerCase()) {
+    throw new HttpError(400, 'Token invalido para este e-mail!');
   }
 
   await userRepository.updateUser(user.id, {
-    password,
+    password: payload.password,
     passwordResetToken: null,
     passwordResetExpires: null
   });
+
+  return {
+    message: 'Senha redefinida com sucesso.'
+  };
 }
 
 async function updateProfile(userId, payload) {
@@ -129,5 +164,6 @@ module.exports = {
   forgotPassword,
   register,
   resetPassword,
-  updateProfile
+  updateProfile,
+  validateResetToken
 };

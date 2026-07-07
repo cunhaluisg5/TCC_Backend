@@ -51,6 +51,19 @@ async function findByEmail(email, options = {}) {
     return null;
 }
 
+async function findByPasswordResetToken(token, options = {}) {
+    const users = await listUsers();
+    const normalizedToken = String(token || '').trim();
+
+    for (const [id, user] of Object.entries(users)) {
+        if (String(user.passwordResetToken || '').trim() === normalizedToken) {
+            return sanitizeUser(withIdentifiers(id, user), options);
+        }
+    }
+
+    return null;
+}
+
 async function findById(id, options = {}) {
     const snapshot = await usersRef().child(id).once('value');
 
@@ -110,5 +123,6 @@ module.exports = {
     createUser,
     findByEmail,
     findById,
+    findByPasswordResetToken,
     updateUser
 };
