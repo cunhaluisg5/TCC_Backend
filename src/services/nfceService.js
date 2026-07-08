@@ -10,7 +10,7 @@ async function listAll() {
 
 async function listByUser(currentUserId, userId) {
   if (String(currentUserId) !== String(userId)) {
-    throw new HttpError(403, 'Acesso negado para este usuario!');
+    throw new HttpError(403, 'Acesso negado para este usuário!');
   }
 
   const nfces = await nfceRepository.listNfcesByUser(userId);
@@ -21,7 +21,7 @@ async function findById(currentUserId, nfceId) {
   const nfce = await nfceRepository.findNfceById(nfceId);
 
   if (!nfce) {
-    throw new HttpError(404, 'NFC-e nao encontrada!');
+    throw new HttpError(404, 'NFC-e não encontrada!');
   }
 
   if (!nfce.user || String(nfce.user.id) !== String(currentUserId)) {
@@ -38,7 +38,7 @@ async function create(userId, payload) {
   const accesskey = normalizeAccessKey(detailsNfce.accesskey);
 
   if (await nfceRepository.findNfceByAccessKeyForUser(accesskey, userId)) {
-    throw new HttpError(400, 'NFC-e ja existente!');
+    throw new HttpError(400, 'NFC-e já existente!');
   }
 
   const nfce = await nfceRepository.createNfce({
@@ -56,7 +56,7 @@ async function update(currentUserId, nfceId, payload) {
   const current = await nfceRepository.findNfceById(nfceId);
 
   if (!current) {
-    throw new HttpError(404, 'NFC-e nao encontrada!');
+    throw new HttpError(404, 'NFC-e não encontrada!');
   }
 
   if (!current.user || String(current.user.id) !== String(currentUserId)) {
@@ -68,7 +68,7 @@ async function update(currentUserId, nfceId, payload) {
   const duplicated = await nfceRepository.findNfceByAccessKeyForUser(detailsNfce.accesskey, currentUserId);
 
   if (duplicated && String(duplicated.id) !== String(nfceId)) {
-    throw new HttpError(400, 'NFC-e ja existente!');
+    throw new HttpError(400, 'NFC-e já existente!');
   }
 
   const nfce = await nfceRepository.updateNfce(nfceId, {
@@ -84,7 +84,7 @@ async function remove(currentUserId, nfceId) {
   const current = await nfceRepository.findNfceById(nfceId);
 
   if (!current) {
-    throw new HttpError(404, 'NFC-e nao encontrada!');
+    throw new HttpError(404, 'NFC-e não encontrada!');
   }
 
   if (!current.user || String(current.user.id) !== String(currentUserId)) {
@@ -102,3 +102,4 @@ module.exports = {
   remove,
   update,
 };
+

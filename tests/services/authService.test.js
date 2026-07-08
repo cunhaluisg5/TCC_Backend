@@ -1,4 +1,4 @@
-jest.mock('../../src/repositories/userRepository', () => ({
+﻿jest.mock('../../src/repositories/userRepository', () => ({
   createUser: jest.fn(),
   findByEmail: jest.fn(),
   findByPasswordResetToken: jest.fn(),
@@ -49,10 +49,10 @@ describe('authService', () => {
     });
 
     await expect(authService.authenticate({ email: 'user@email.com', password: '654321' }))
-      .rejects.toMatchObject({ status: 400, message: 'Senha invalida!' });
+      .rejects.toMatchObject({ status: 400, message: 'Senha inválida!' });
   });
 
-  it('retorna resposta generica quando o e-mail nao existe no forgot password', async () => {
+  it('retorna resposta generica quando o e-mail não existe no forgot password', async () => {
     userRepository.findByEmail.mockResolvedValue(null);
 
     const result = await authService.forgotPassword({ email: 'naocadastrado@email.com' });
@@ -137,3 +137,4 @@ describe('authService', () => {
     expect(result.message).toBe('Senha redefinida com sucesso.');
   });
 });
+

@@ -1,40 +1,59 @@
-﻿# Scan NFC-e Back-End
+﻿# Scan NFC-e Backend
 
-API principal do ecossistema Scan NFC-e, responsavel por autenticacao, recuperacao de senha, crawler da NFC-e e persistencia em Firebase Realtime Database.
+API principal do ecossistema Scan NFC-e. Este projeto concentra autenticação, recuperação de senha, captura de NFC-e, persistência em Firebase Realtime Database e documentação pública das rotas.
+
+## Visão geral
+
+O backend atende três clientes do ecossistema:
+
+- `Scan_NFCe`: aplicativo mobile principal
+- `Scan_NFCe_Reset`: aplicação web de redefinição de senha
+- `Scan_NFCe_Help`: central de ajuda com acesso ao Swagger
 
 ## Responsabilidades
 
-- cadastro e autenticacao de usuarios
-- emissao e validacao de token
-- recuperacao e redefinicao de senha
-- crawler da NFC-e
-- armazenamento e consulta de notas fiscais
-- documentacao publica da API via Swagger
+- cadastro e autenticação de usuários
+- emissão, validação e expiração de token
+- recuperação e redefinição de senha
+- captura e normalização de NFC-e
+- armazenamento, consulta e exclusão de notas fiscais
+- documentação da API com Swagger/OpenAPI
+- validações, rate limit e proteção de rotas
 
-## Arquitetura atual
+## Stack
+
+- Node.js
+- Express
+- Firebase Admin SDK
+- JWT
+- Nodemailer
+- Swagger UI Express
+- Jest + Supertest
+
+## Estrutura do projeto
 
 ```text
 src/
-  config/        configuracoes de ambiente e autenticacao
+  config/        configuração de ambiente e autenticação
   controllers/   adaptadores HTTP
-  db/            inicializacao do Firebase
-  docs/          especificacao OpenAPI/Swagger
-  http/          bootstrap da aplicacao Express
-  middlewares/   autenticacao, rate limit, validacao e tratamento de erro
-  modules/       integracoes auxiliares, como mailer
+  db/            inicialização do Firebase
+  docs/          especificação OpenAPI/Swagger
+  http/          bootstrap da aplicação Express
+  middlewares/   autenticação, rate limit, validação e tratamento de erro
+  modules/       integrações auxiliares, como mailer
   repositories/  acesso a dados
-  resources/     templates e arquivos estaticos usados pelo backend
-  routes/        definicao publica das rotas
-  services/      regras de negocio
-  utils/         helpers HTTP, validacao e erros de dominio
-  validators/    regras de validacao de payload
+  resources/     templates e arquivos estáticos do backend
+  routes/        definição pública das rotas
+  services/      regras de negócio
+  utils/         helpers HTTP, validação e erros de domínio
+  validators/    regras de validação de payload
 ```
 
-## Variaveis de ambiente
+## Variáveis de ambiente
 
-Crie um `.env` a partir de `.env.example`.
+Crie um arquivo `.env` a partir de `.env.example`.
 
-Variaveis principais:
+Principais variáveis:
 
 - `PORT`
 - `PUBLIC_BASE_URL`
@@ -56,36 +75,77 @@ Variaveis principais:
 - `MAIL_USER`
 - `MAIL_PASS`
 
-## Documentacao da API
+## Pré-requisitos
+
+- Node.js compatível com o projeto
+- npm
+- credenciais válidas do Firebase
+- configuração SMTP para envio de e-mails
+
+## Como executar localmente
+
+```bash
+npm install
+npm run dev
+```
+
+Scripts úteis:
+
+```bash
+npm start
+npm run dev
+npm test
+npm run check:swagger
+npm run ci
+```
+
+## Documentação da API
 
 - Swagger UI: `/docs`
 - OpenAPI JSON: `/docs.json`
 
-## Seguranca aplicada
+## Fluxos cobertos
 
-- `helmet` para headers de seguranca
-- `express-rate-limit` para autenticacao e uso geral da API
-- limite de payload JSON
-- validacao de payload para auth, reset, crawler e NFC-e
-- protecao de alteracao de usuario por dono do recurso
-- protecao de leitura, edicao e exclusao de NFC-e por dono do recurso
+1. Cadastro, login e persistência de sessão.
+2. Recuperação de senha com geração e validação de token.
+3. Consulta do QR Code da NFC-e e normalização dos dados retornados.
+4. Salvamento, leitura e exclusão de notas por usuário autenticado.
+5. Suporte às análises e comparações consumidas pelo aplicativo.
 
-## Scripts
+## Segurança aplicada
 
-```bash
-npm run dev
-npm start
-npm run check:swagger
-npm test
-npm run ci
-```
+- `helmet` para cabeçalhos de segurança
+- `cors` configurável por ambiente
+- `express-rate-limit` para autenticação e uso geral
+- validação de payloads nas rotas críticas
+- proteção de recursos por usuário autenticado
+- remoção de segredos do código-fonte
 
-## Integracao continua
+## Testes e CI
 
-O repositório agora possui workflow em `.github/workflows/backend-ci.yml` para validar automaticamente:
+- testes automatizados com `jest` e `supertest`
+- verificação da especificação Swagger
+- workflow de GitHub Actions para instalação, validação e testes
 
-- instalacao das dependencias com `npm ci`
-- integridade da especificacao Swagger
-- suite automatizada de testes
+## Troubleshooting
 
-O pipeline nao depende de Firebase real nem de credenciais externas para a validacao atual, porque os testes usam mocks nos pontos de integracao.
+- erro ao enviar e-mail: revise SMTP e credenciais em `.env`
+- erro de autenticação: valide `JWT_SECRET`, `JWT_EXPIRES_IN` e relógio do ambiente
+- falha no crawler: confirme conectividade externa e disponibilidade do portal fiscal
+- erro de CORS: ajuste `CORS_ORIGIN` para os clientes que consumirão a API
+
+## Publicação e operação
+
+- configure URLs públicas coerentes em `PUBLIC_BASE_URL` e `RESET_APP_URL`
+- mantenha segredos apenas em variáveis de ambiente
+- revise logs e limites antes do ambiente de produção
+
+## Capturas de tela
+
+Este repositório não usa prints no `README`, porque seu foco é API e operação técnica.
+
+## Roadmap
+
+- ampliar cobertura dos fluxos críticos do crawler
+- consolidar observabilidade e logs estruturados
+- preparar checklist final de produção

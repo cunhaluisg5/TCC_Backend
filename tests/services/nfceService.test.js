@@ -39,16 +39,16 @@ describe('nfceService', () => {
     jest.clearAllMocks();
   });
 
-  it('rejeita listagem de outro usuario', async () => {
+  it('rejeita listagem de outro usuário', async () => {
     await expect(nfceService.listByUser('user-1', 'user-2'))
-      .rejects.toMatchObject({ status: 403, message: 'Acesso negado para este usuario!' });
+      .rejects.toMatchObject({ status: 403, message: 'Acesso negado para este usuário!' });
   });
 
   it('rejeita criacao de NFC-e duplicada com chave normalizada', async () => {
     nfceRepository.findNfceByAccessKeyForUser.mockResolvedValue({ id: 'nfce-1' });
 
     await expect(nfceService.create('user-1', payload))
-      .rejects.toMatchObject({ status: 400, message: 'NFC-e ja existente!' });
+      .rejects.toMatchObject({ status: 400, message: 'NFC-e já existente!' });
 
     expect(nfceRepository.findNfceByAccessKeyForUser)
       .toHaveBeenCalledWith('31260717745613002609650100001981091330127025', 'user-1');
@@ -115,3 +115,4 @@ describe('nfceService', () => {
     expect(nfceRepository.deleteNfce).toHaveBeenCalledWith('nfce-1');
   });
 });
+

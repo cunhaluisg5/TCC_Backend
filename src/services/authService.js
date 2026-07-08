@@ -1,4 +1,4 @@
-const bcrypt = require('bcryptjs');
+﻿const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const mailer = require('../modules/mailer');
@@ -28,7 +28,7 @@ function getPasswordResetExpiry() {
 
 function ensureTokenIsUsable(user) {
   if (!user) {
-    throw new HttpError(400, 'Token invalido!');
+    throw new HttpError(400, 'Token inválido!');
   }
 
   if (!user.passwordResetExpires || new Date() > new Date(user.passwordResetExpires)) {
@@ -47,7 +47,7 @@ async function register(payload) {
   const { email } = payload;
 
   if (await userRepository.findByEmail(email)) {
-    throw new HttpError(400, 'Usuario ja existe!');
+    throw new HttpError(400, 'Usuário já existe!');
   }
 
   const user = await userRepository.createUser(payload);
@@ -60,11 +60,11 @@ async function authenticate(payload) {
   const user = await userRepository.findByEmail(email, { includeSensitive: true });
 
   if (!user) {
-    throw new HttpError(400, 'Usuario nao encontrado!');
+    throw new HttpError(400, 'Usuário não encontrado!');
   }
 
   if (!await bcrypt.compare(password, user.password)) {
-    throw new HttpError(400, 'Senha invalida!');
+    throw new HttpError(400, 'Senha inválida!');
   }
 
   delete user.password;
@@ -81,7 +81,7 @@ async function forgotPassword(payload) {
 
   if (!user) {
     return {
-      message: 'Se o e-mail estiver cadastrado, enviaremos as instrucoes de redefinicao.'
+      message: 'Se o e-mail estiver cadastrado, enviaremos as instruções de redefinição.'
     };
   }
 
@@ -98,11 +98,11 @@ async function forgotPassword(payload) {
       to: email,
       from: 'Scan NFC-e',
       template: 'auth/forgot_password',
-      subject: 'Recuperacao de senha',
+      subject: 'Recuperação de senha',
       context: { token, resetUrl: resetAppUrl }
     }, (err) => {
       if (err) {
-        reject(new HttpError(400, 'Nao foi possivel enviar e-mail!'));
+        reject(new HttpError(400, 'Não foi possível enviar o e-mail!'));
         return;
       }
 
@@ -111,7 +111,7 @@ async function forgotPassword(payload) {
   });
 
   return {
-    message: 'Se o e-mail estiver cadastrado, enviaremos as instrucoes de redefinicao.',
+    message: 'Se o e-mail estiver cadastrado, enviaremos as instruções de redefinição.',
     expiresAt
   };
 }
@@ -134,7 +134,7 @@ async function resetPassword(payload) {
   const user = await findUserByResetToken(token);
 
   if (payload.email && String(payload.email).toLowerCase() !== String(user.email).toLowerCase()) {
-    throw new HttpError(400, 'Token invalido para este e-mail!');
+    throw new HttpError(400, 'Token inválido para este e-mail!');
   }
 
   await userRepository.updateUser(user.id, {
@@ -153,7 +153,7 @@ async function updateProfile(userId, payload) {
   const user = await userRepository.updateUser(userId, { name: payload.name });
 
   if (!user) {
-    throw new HttpError(404, 'Usuario nao encontrado!');
+    throw new HttpError(404, 'Usuário não encontrado!');
   }
 
   return { user };
@@ -167,3 +167,4 @@ module.exports = {
   updateProfile,
   validateResetToken
 };
+
