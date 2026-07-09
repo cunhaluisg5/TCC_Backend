@@ -1,4 +1,4 @@
-﻿# Scan NFC-e Backend
+# Scan NFC-e Backend
 
 API principal do ecossistema Scan NFC-e. Este projeto concentra autenticação, recuperação de senha, captura de NFC-e, persistência em Firebase Realtime Database e documentação pública das rotas.
 
@@ -99,6 +99,28 @@ npm run check:swagger
 npm run ci
 ```
 
+## Docker
+
+O backend já está preparado para execução em container com leitura de variáveis a partir do arquivo `.env`.
+
+### Build manual da imagem
+
+```bash
+docker build -t scan-nfce-backend .
+```
+
+```bash
+docker run --rm --env-file .env -p 3000:3000 scan-nfce-backend
+```
+
+### Subida com Docker Compose
+
+```bash
+docker compose up --build
+```
+
+A API ficará disponível em `http://localhost:3000`.
+
 ## Documentação da API
 
 - Swagger UI: `/docs`
@@ -130,15 +152,17 @@ npm run ci
 ## Troubleshooting
 
 - erro ao enviar e-mail: revise SMTP e credenciais em `.env`
-- erro de autenticação: valide `JWT_SECRET`, `JWT_EXPIRES_IN` e relógio do ambiente
+- erro de autenticação: valide `JWT_SECRET`, `JWT_EXPIRES_IN` e o relógio do ambiente
 - falha no crawler: confirme conectividade externa e disponibilidade do portal fiscal
 - erro de CORS: ajuste `CORS_ORIGIN` para os clientes que consumirão a API
+- container sobe, mas a API falha ao acessar o Firebase: revise `FIREBASE_PRIVATE_KEY` e demais variáveis obrigatórias
 
 ## Publicação e operação
 
 - configure URLs públicas coerentes em `PUBLIC_BASE_URL` e `RESET_APP_URL`
 - mantenha segredos apenas em variáveis de ambiente
 - revise logs e limites antes do ambiente de produção
+- use a mesma configuração do `.env` em orquestradores como Docker, serviços cloud ou VPS
 
 ## Capturas de tela
 
